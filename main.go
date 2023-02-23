@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-
+	"runtime"
 	"os"
 
 	"github.com/dougwatson/checksum/go-checksum"
@@ -14,6 +14,14 @@ func main() {
 		fmt.Println("needs parameters: go.mod or dir")
 		return
 	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			buf := make([]byte, 1024)
+			n := runtime.Stack(buf, false)
+			fmt.Printf("panic: %v\n%s", r, buf[:n])
+		}
+	}()
 
 	file := os.Args[1]
 	fi, err := os.Stat(file)
