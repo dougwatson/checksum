@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"os"
 
-	"github.com/dougwatson/checksum/go-checksum"
+	"github.com/dougwatson/go-checksum/checksum"
 )
 
 func main() {
