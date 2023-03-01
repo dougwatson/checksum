@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
@@ -21,7 +20,11 @@ type GoDirHash struct {
 
 // HashDir hash the specify dir
 func HashDir(dir, prefix string) (GoDirHash, error) {
+	println("HashDir dir=", dir, " prefix=", prefix)
 	files, err := DirFiles(dir, prefix)
+	//files, err := DirFiles(dir, "")
+	println("errx=", err.Error())
+	fmt.Printf("XXXXXX files=%v\n", files)
 	if err != nil {
 		return GoDirHash{}, err
 	}
@@ -33,6 +36,7 @@ func HashDir(dir, prefix string) (GoDirHash, error) {
 
 // Hash1 `1` means SHA256
 func Hash1(files []string, open func(string) (io.ReadCloser, error)) (GoDirHash, error) {
+	println("Hash1 files=", files)
 	h := sha256.New()
 	files = append([]string(nil), files...)
 	sort.Strings(files)
@@ -67,19 +71,25 @@ func Hash1(files []string, open func(string) (io.ReadCloser, error)) (GoDirHash,
 	return allHash, nil
 }
 func DirFiles(dir, prefix string) ([]string, error) {
+	println("DirFiles dir=", dir, " prefix=", prefix)
 	var files []string
-	err := fs.WalkDir(os.DirFS(dir), dir, func(path string, d fs.DirEntry, err error) error {
+	dir = filepath.Clean(dir)
+	err := filepath.Walk(dir, func(file string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		if d.IsDir() {
+		if info.IsDir() {
 			// skip .git dir
-			if d.Name() == ".git" {
-				return fs.SkipDir
+			if info.Name() == ".git" {
+				return filepath.SkipDir
 			}
 			return nil
 		}
-		f := filepath.Join(prefix, path)
+		rel := file
+		if dir != "." {
+			rel = file[len(dir)+1:]
+		}
+		f := filepath.Join(prefix, rel)
 		files = append(files, filepath.ToSlash(f))
 		return nil
 	})
